@@ -13,6 +13,8 @@ public class PlayerMovement : NetworkBehaviour
     [SerializeField] private float gravity = 9.81f;
     
     private float _verticalVelocity;
+
+    private bool disableMovement = false;
     
     private void Start()
     {
@@ -22,11 +24,29 @@ public class PlayerMovement : NetworkBehaviour
     private void Update()
     {
         if (!IsOwner) return;
+
+        if (disableMovement) return;
         
         InputManagement();
         Movement();
     }
 
+    public void SetDisableMovement(bool value)
+    {
+        if (!IsOwner) return;
+    
+        disableMovement = value;
+        if (disableMovement)
+        {
+            Debug.Log("Disabled movement for: " + gameObject.name);
+            controller.enabled = false;
+        }
+        else
+        {
+            controller.enabled = true;
+        }
+    }
+    
     private void Movement()
     {
         GroundMovement();
