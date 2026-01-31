@@ -5,7 +5,7 @@ using UnityEngine;
 public class CanvasData : MonoBehaviour
 {
     [SerializeField] private GameObject multiplayerMenu;
-    [SerializeField] private GameObject securityGuardUI;  
+    [SerializeField] private SecurityUI securityGuardUI;  
     
     private void OnEnable()
     {
@@ -34,17 +34,18 @@ public class CanvasData : MonoBehaviour
         // Find the local player
         foreach (var playerObj in FindObjectsOfType<PlayerData>())
         {
+            Debug.Log($"ShowRoleSpecificUI {playerObj}");
             // Check if this is the local player (the one we control)
             if (playerObj.IsOwner)
             {
                 if (playerObj.IsSecurity())
                 {
-                    securityGuardUI.SetActive(true);
+                    securityGuardUI.gameObject.SetActive(true);
                     Debug.Log("Showing security UI");
                 }
                 else
                 {
-                    securityGuardUI.SetActive(false);
+                    securityGuardUI.gameObject.SetActive(false);
                     Debug.Log("Hiding security UI - player is bouncer");
                 }
                 break;  // Found our player, stop searching

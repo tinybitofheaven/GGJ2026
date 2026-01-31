@@ -1,9 +1,10 @@
 using System;
 using Unity.Netcode;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class SecurityUI : NetworkBehaviour
+public class SecurityUI : MonoBehaviour
 {
     [SerializeField] private Image maskImage;
 
@@ -11,12 +12,14 @@ public class SecurityUI : NetworkBehaviour
     {
         gameObject.SetActive(false);
     }
-
+    
     private void OnEnable()
     {
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.OnCurrentImageChanged += DisplayCurrentImage;
+            GameManager.Instance.OnMaskChanged += DisplayMask;
+
+            DisplayMask();
         }
     }
     
@@ -24,11 +27,11 @@ public class SecurityUI : NetworkBehaviour
     {
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.OnCurrentImageChanged -= DisplayCurrentImage;
+            GameManager.Instance.OnMaskChanged -= DisplayMask;
         }
     }
     
-    private void DisplayCurrentImage(int index)
+    private void DisplayMask(int index = 0)
     {
         Sprite currentSprite = GameManager.Instance.GetCurrentSprite();
         

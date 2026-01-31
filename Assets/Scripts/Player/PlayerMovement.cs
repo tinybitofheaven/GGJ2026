@@ -31,7 +31,8 @@ public class PlayerMovement : NetworkBehaviour
         Movement();
     }
 
-    public void SetDisableMovement(bool value)
+    [ClientRpc]
+    public void SetDisableMovementClientRPC(bool value)
     {
         if (!IsOwner) return;
     

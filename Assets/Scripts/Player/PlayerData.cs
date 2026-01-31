@@ -1,6 +1,8 @@
 using System;
+using StarterAssets;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public enum Role
 {
@@ -13,9 +15,13 @@ public class PlayerData : NetworkBehaviour
 {
     [SerializeField] private GameObject _playerGameObject;
     [SerializeField] private NetworkObject _playerNetworkObject;
-    [SerializeField] private PlayerMovement _playerMovement;
+    [SerializeField] private ThirdPersonController _playerMovement;
+    [SerializeField] private CharacterController characterController;
     [SerializeField] private GameObject _playerModel;
-    [SerializeField] private GameObject _playerIndicator;
+    
+    
+    private StarterAssetsInputs _starterAssetsInputs;
+    private PlayerInput _playerInput;
     
     public GameObject PlayerGameObject
     {
@@ -28,7 +34,7 @@ public class PlayerData : NetworkBehaviour
         get => _playerNetworkObject;
         set => _playerNetworkObject = value;
     }
-    public PlayerMovement PlayerMovement 
+    public ThirdPersonController PlayerMovement 
     {
         get => _playerMovement;
         set => _playerMovement = value;
@@ -47,7 +53,9 @@ public class PlayerData : NetworkBehaviour
         
         PlayerGameObject = gameObject;
         PlayerNetworkObject = PlayerGameObject.GetComponent<NetworkObject>();
-        PlayerMovement = PlayerGameObject.GetComponent<PlayerMovement>();
+        PlayerMovement = PlayerGameObject.GetComponentInChildren<ThirdPersonController>();
+        _starterAssetsInputs = GetComponent<StarterAssetsInputs>();
+        _playerInput = GetComponent<PlayerInput>();
         
         // Subscribe to role changes
         playerRole.OnValueChanged += OnRoleChanged;
@@ -87,14 +95,9 @@ public class PlayerData : NetworkBehaviour
         
         if (role == Role.Security)
         {
-            PlayerMovement.SetDisableMovement(true);
-            // _playerModel.SetActive(false);
+            // gameObject.SetActive(false);
+            SetDisableMovementClientRPC(true);
         }
-
-        // if (IsOwner)
-        // {
-        //     _playerIndicator.SetActive(true);
-        // }
     }
 
     public Role GetRole()
@@ -121,4 +124,39 @@ public class PlayerData : NetworkBehaviour
     {
         return PlayerNetworkObject;
     }
+    
+    private bool disableMovement = false;
+        
+    [ClientRpc]
+    public void SetDisableMovementClientRPC(bool value)
+    {
+        if (!IsOwner) return;
+    
+        disableMovement = value;
+        if (disableMovement)
+        {
+            Debug.Log("Disabled movement for: " + gameObject.name);
+            characterController.enabled = false;
+            _playerMovement.enabled = false;
+            _playerModel.SetActive(false);
+            _starterAssetsInputs.enabled = false;
+            _playerMovement.enabled = false;
+            _playerInput.enabled = false;
+        }
+        else
+        {
+            characterController.enabled = true;
+            _playerMovement.enabled = true;
+            _playerModel.SetActive(true);
+            _starterAssetsInputs.enabled = true;
+            _playerMovement.enabled = true;
+            _playerInput.enabled = true;
+        }
+    }
+
+    public PlayerInput GetPlayerInput()
+    {
+        return _playerInput;
+    }
+    
 }

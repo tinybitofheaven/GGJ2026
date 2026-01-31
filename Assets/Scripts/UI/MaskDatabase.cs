@@ -35,4 +35,9 @@ public class MaskDatabase : ScriptableObject
         
         return null;
     }
+
+    public int GetImageCount()
+    {
+        return allImages.Length;
+    }
 }

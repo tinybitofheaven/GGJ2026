@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 using UnityEngine.UIElements;
 using Random = UnityEngine.Random;
 
@@ -22,18 +24,22 @@ public class GameManager : NetworkBehaviour
         DontDestroyOnLoad(this.gameObject);
 
     }
-    
     [SerializeField] private MaskDatabase maskDatabase;
+    public MaskDatabase MaskDatabase { get => maskDatabase;}
 
     private List<NetworkObject> connectedPlayers = new ();
     
     private PlayerData bouncer;
     private PlayerData security;
     
+    private List<NPCData> generatedNPCs = new ();
+    [SerializeField] private int npcCount = 5;
+    [SerializeField] private GameObject npcPrefab;
+    
     public event Action OnGameStart;
     public event Action OnGameEnd;
     public event Action OnImagesSelected;
-    public event Action<int> OnCurrentImageChanged;
+    public event Action<int> OnMaskChanged;
     
     public NetworkList<int> selectedImageIds;
     
@@ -49,18 +55,20 @@ public class GameManager : NetworkBehaviour
         SetInstance();
         
         selectedImageIds = new NetworkList<int>();
+        
+        npcCount = npcCount >= maskDatabase.GetImageCount() ? maskDatabase.GetImageCount() : npcCount;
     }
 
     private void Update()
     {
         if (security != null && security.NetworkObject.IsOwner)
         {
-            if (Input.GetKeyDown(KeyCode.LeftArrow))
+            if (Input.GetKeyDown(KeyCode.Q))
             {
                 PreviousImage();
             }
         
-            if (Input.GetKeyDown(KeyCode.RightArrow))
+            if (Input.GetKeyDown(KeyCode.E))
             {
                 NextImage();
             }
@@ -69,10 +77,7 @@ public class GameManager : NetworkBehaviour
 
     private void Start()
     {
-        if (NetworkManager.Singleton != null)
-        {
-            NetworkManager.Singleton.OnConnectionEvent += OnConnectionEvent;
-        }
+        NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
     }
     
     public override void OnNetworkSpawn()
@@ -95,7 +100,7 @@ public class GameManager : NetworkBehaviour
     {
         Debug.Log($"Selected images changed: {changeEvent.Type}");
         
-        if (selectedImageIds.Count == 3)
+        if (selectedImageIds.Count == npcCount)
         {
             OnImagesSelected?.Invoke();
         }
@@ -104,14 +109,27 @@ public class GameManager : NetworkBehaviour
     private void OnCurrentImageIndexChanged(int oldValue, int newValue)
     {
         Debug.Log($"Current image changed from {oldValue} to {newValue}");
-        OnCurrentImageChanged?.Invoke(newValue);
+        OnMaskChanged?.Invoke(newValue);
+    }
+
+    private void OnClientConnected(ulong clientId)
+    {
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost && clientId == NetworkManager.Singleton.LocalClientId)
+        {
+            Debug.Log($"Client connected is server: {NetworkManager.Singleton.LocalClientId}");
+            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnectedHost;
+        }
     }
     
-    private void OnConnectionEvent(NetworkManager manager, ConnectionEventData eventData)
+    private void OnClientConnectedHost(ulong clientId)
     {
-        Debug.Log("OnConnectionEvent: " + eventData);
-        if (NetworkManager.Singleton.IsHost && GetPlayerCount() == 2)
+        Debug.Log($"Client host connected: {clientId}");
+        if (GetPlayerCount() == 2)
         {
+            Debug.Log($"Client connected greater than 2: {clientId}");
+            // Unsubscribe to prevent being called again
+            NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
+        
             SelectRandomImages();
             StartGame();
         }
@@ -119,6 +137,7 @@ public class GameManager : NetworkBehaviour
 
     private void StartGame()
     {
+        Debug.Log($"StartGame {NetworkManager.Singleton.LocalClientId}");
         connectedPlayers.Clear();
 
         foreach (KeyValuePair<ulong, NetworkObject> kvp in NetworkManager.Singleton.SpawnManager.SpawnedObjects)
@@ -154,19 +173,21 @@ public class GameManager : NetworkBehaviour
         security.SetRole(Role.Security);
 
         NotifyGameStartClientRpc();
+
+        SpawnNPCs();
     }
     
     private void SelectRandomImages()
     {
         if (!IsServer) return;
         
-        // Clear previous selection
         selectedImageIds.Clear();
         
-        // Get total number of images
-        int totalImages = maskDatabase.allImages.Length;
+        int totalImages = maskDatabase.GetImageCount();
         
-        if (totalImages < 3)
+        npcCount = npcCount > totalImages ? totalImages : npcCount;
+        
+        if (totalImages < 3 || totalImages > maskDatabase.GetImageCount())
         {
             Debug.LogError("Not enough images in database! Need at least 3.");
             return;
@@ -179,19 +200,16 @@ public class GameManager : NetworkBehaviour
             availableIndices.Add(i);
         }
         
-        // Select 3 random images
-        for (int i = 0; i < 3; i++)
+        // Select random images from pool for each NPC
+        for (int i = 0; i < npcCount; i++)
         {
             int randomIndex = Random.Range(0, availableIndices.Count);
             int selectedId = availableIndices[randomIndex];
             
             selectedImageIds.Add(selectedId);
             availableIndices.RemoveAt(randomIndex);
-            
-            Debug.Log($"Selected image ID: {selectedId}");
         }
         
-        // Reset to first image
         currentImageIndex.Value = 0;
     }
     
@@ -320,10 +338,29 @@ public class GameManager : NetworkBehaviour
         OnGameStart?.Invoke();
     }
 
+    private void SpawnNPCs()
+    {
+        if (!IsServer) return;
+        
+        generatedNPCs.Clear();
+            
+        for (int i = 0; i < npcCount; i++)
+        {
+            NPCData npc = Instantiate(npcPrefab, new Vector3(i, 0, 0), Quaternion.identity).GetComponent<NPCData>();
+            
+            NetworkObject networkObject = npc.GetNetworkObject();
+            networkObject.Spawn();
+            
+            npc.SetMsak(selectedImageIds[i]);
+            generatedNPCs.Add(npc);
+        }
+    }
+    
     public int GetPlayerCount()
     {
         // This will be accurate on the Host/Server.
         // Clients only see 1 (their own connection) unless synced otherwise.
         return NetworkManager.Singleton.ConnectedClientsList.Count;
     }
+    
 }

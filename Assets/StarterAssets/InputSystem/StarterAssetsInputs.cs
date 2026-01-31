@@ -1,0 +1,127 @@
+using Unity.Netcode;
+using UnityEngine;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
+
+namespace StarterAssets
+{
+	public class StarterAssetsInputs : NetworkBehaviour
+	{
+		[Header("Character Input Values")]
+		public Vector2 move;
+		public Vector2 look;
+		public bool jump;
+		public bool sprint;
+
+		[Header("Movement Settings")]
+		public bool analogMovement;
+
+		// [Header("Mouse Cursor Settings")]
+		// public bool cursorLocked = true;
+		// public bool cursorInputForLook = true;
+		
+		private void Update()
+		{
+			// Only poll input if this instance of the script belongs to the local player
+			if (!IsOwner) return;
+
+			HandleInput();
+		}
+
+		private void HandleInput()
+		{
+			// Movement Polling
+			float x = Input.GetAxisRaw("Horizontal");
+			float y = Input.GetAxisRaw("Vertical");
+			MoveInput(new Vector2(x, y));
+
+			// // Look Polling
+			// if (cursorInputForLook)
+			// {
+			// 	float mouseX = Input.GetAxis("Mouse X");
+			// 	float mouseY = Input.GetAxis("Mouse Y");
+			// 	LookInput(new Vector2(mouseX, mouseY));
+			// }
+
+			// Button Polling
+			JumpInput(Input.GetButton("Jump"));
+			SprintInput(Input.GetKey(KeyCode.LeftShift));
+		}
+
+		public void MoveInput(Vector2 newMoveDirection) { move = newMoveDirection; }
+		public void LookInput(Vector2 newLookDirection) { look = newLookDirection; }
+		public void JumpInput(bool newJumpState) { jump = newJumpState; }
+		public void SprintInput(bool newSprintState) { sprint = newSprintState; }
+
+		// private void OnApplicationFocus(bool hasFocus)
+		// {
+		// 	// Only lock the cursor if we actually own this player
+		// 	if (IsOwner) SetCursorState(cursorLocked);
+		// }
+		//
+		// private void SetCursorState(bool newState)
+		// {
+		// 	Cursor.lockState = newState ? CursorLockMode.Locked : CursorLockMode.None;
+		// }
+		
+//
+// #if ENABLE_INPUT_SYSTEM
+// 		public void OnMove(InputValue value)
+// 		{
+// 			MoveInput(value.Get<Vector2>());
+// 		}
+//
+// 		public void OnLook(InputValue value)
+// 		{
+// 			if(cursorInputForLook)
+// 			{
+// 				LookInput(value.Get<Vector2>());
+// 			}
+// 		}
+//
+// 		public void OnJump(InputValue value)
+// 		{
+// 			JumpInput(value.isPressed);
+// 		}
+//
+// 		public void OnSprint(InputValue value)
+// 		{
+// 			SprintInput(value.isPressed);
+// 		}
+// #endif
+//
+//
+// 		public void MoveInput(Vector2 newMoveDirection)
+// 		{
+// 			Debug.Log($"Move direction: {newMoveDirection}");
+// 			move = newMoveDirection;
+// 		} 
+//
+// 		public void LookInput(Vector2 newLookDirection)
+// 		{
+// 			look = newLookDirection;
+// 		}
+//
+// 		public void JumpInput(bool newJumpState)
+// 		{
+// 			jump = newJumpState;
+// 		}
+//
+// 		public void SprintInput(bool newSprintState)
+// 		{
+// 			sprint = newSprintState;
+// 		}
+//
+// 		private void OnApplicationFocus(bool hasFocus)
+// 		{
+// 			SetCursorState(cursorLocked);
+// 		}
+//
+// 		private void SetCursorState(bool newState)
+// 		{
+// 			Cursor.lockState = newState ? CursorLockMode.Locked : CursorLockMode.None;
+// 		}
+	}
+	
+}
