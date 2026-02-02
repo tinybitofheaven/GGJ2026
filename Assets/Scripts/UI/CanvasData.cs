@@ -1,11 +1,14 @@
 using System;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Serialization;
+using UnityEngine.UI;
 
 public class CanvasData : MonoBehaviour
 {
-    [SerializeField] private GameObject multiplayerMenu;
-    [SerializeField] private SecurityUI securityGuardUI;  
+    [SerializeField] private SecurityUI securityGuardUI; 
+    [SerializeField] private BouncerUI bouncerUI; 
+    [SerializeField] private MainMenu mainMenu;
     
     private void OnEnable()
     {
@@ -25,36 +28,31 @@ public class CanvasData : MonoBehaviour
     
     private void HandleGameStart()
     {
-        DisableMultiplayerMenu();
+        mainMenu.DisableAllMenus();
+        mainMenu.GetComponent<Image>().enabled = false;
         ShowRoleSpecificUI();
     }
     
     private void ShowRoleSpecificUI()
     {
-        // Find the local player
         foreach (var playerObj in FindObjectsOfType<PlayerData>())
         {
-            Debug.Log($"ShowRoleSpecificUI {playerObj}");
-            // Check if this is the local player (the one we control)
             if (playerObj.IsOwner)
             {
                 if (playerObj.IsSecurity())
                 {
                     securityGuardUI.gameObject.SetActive(true);
-                    Debug.Log("Showing security UI");
+                    bouncerUI.gameObject.SetActive(false);
+                    bouncerUI.RemoveBouncerUICallbacks(playerObj);
+
                 }
                 else
                 {
                     securityGuardUI.gameObject.SetActive(false);
-                    Debug.Log("Hiding security UI - player is bouncer");
+                    bouncerUI.gameObject.SetActive(true);
+                    bouncerUI.SetBouncerUICallbacks(playerObj);
                 }
-                break;  // Found our player, stop searching
             }
         }
-    }
-
-    private void DisableMultiplayerMenu()
-    {
-        multiplayerMenu.SetActive(false);
     }
 }

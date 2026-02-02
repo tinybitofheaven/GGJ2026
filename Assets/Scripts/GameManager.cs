@@ -1,12 +1,27 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.AI.Navigation;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
 using UnityEngine.UIElements;
 using Random = UnityEngine.Random;
+
+public struct EjectionStats : INetworkSerializable
+{
+    public int Correct;
+    public int Incorrect;
+    public int Total;
+
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    {
+        serializer.SerializeValue(ref Correct);
+        serializer.SerializeValue(ref Incorrect);
+        serializer.SerializeValue(ref Total);
+    }
+}
 
 public class GameManager : NetworkBehaviour
 {
@@ -32,14 +47,27 @@ public class GameManager : NetworkBehaviour
     private PlayerData bouncer;
     private PlayerData security;
     
+    public PlayerData Security { get => security;}
+    public PlayerData Bouncer { get => bouncer;}
+    
     private List<NPCData> generatedNPCs = new ();
-    [SerializeField] private int npcCount = 5;
+    [SerializeField] private int npcCount = 10;
     [SerializeField] private GameObject npcPrefab;
+
+    // Replace the 3 separate ints with this
+    public NetworkVariable<EjectionStats> EjectionData = new NetworkVariable<EjectionStats>(
+        new EjectionStats(),
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+    
+    public string[] firstNames;
+    public string[] lastNames;
     
     public event Action OnGameStart;
     public event Action OnGameEnd;
     public event Action OnImagesSelected;
-    public event Action<int> OnMaskChanged;
+    public event Action<int, int> OnMaskChanged;
     
     public NetworkList<int> selectedImageIds;
     
@@ -48,7 +76,6 @@ public class GameManager : NetworkBehaviour
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server
     );
-    public int CurrentImageIndex => currentImageIndex.Value;
     
     private void Awake()
     {
@@ -95,11 +122,54 @@ public class GameManager : NetworkBehaviour
         selectedImageIds.OnListChanged -= OnSelectedImagesChanged;
         currentImageIndex.OnValueChanged -= OnCurrentImageIndexChanged;
     }
+
+    public void EvictNPC(NPCData npc)
+    {
+        if (!IsServer) return;
+
+        EjectionStats currentStats = EjectionData.Value;
+        int npcMaskId = npc.GetMaskId();
+        int currentGoalId = GetCurrentImageId();
+
+        if (npcMaskId == currentGoalId)
+        {
+            // CORRECT GUESS: Move to the next target image
+            currentStats.Correct++;
+            currentImageIndex.Value++;
+        }
+        else
+        {
+            // INCORRECT GUESS: Remove this NPC's mask from the valid list
+            currentStats.Incorrect++;
+        
+            // Find where this incorrect mask is in our selection list
+            for (int i = 0; i < selectedImageIds.Count; i++)
+            {
+                if (selectedImageIds[i] == npcMaskId)
+                {
+                    selectedImageIds.RemoveAt(i);
+                
+                    // If we removed an item at or before our current pointer,
+                    // we must shift the pointer back so the UI doesn't "skip" an image
+                    if (i <= currentImageIndex.Value && currentImageIndex.Value > 0)
+                    {
+                        currentImageIndex.Value--;
+                    }
+                    break; 
+                }
+            }
+        }
+        
+        DebugLogValidIds();
+    
+        currentStats.Total++;
+        EjectionData.Value = currentStats;
+
+        npc.NetworkObject.Despawn();
+    }
     
     private void OnSelectedImagesChanged(NetworkListEvent<int> changeEvent)
     {
-        Debug.Log($"Selected images changed: {changeEvent.Type}");
-        
         if (selectedImageIds.Count == npcCount)
         {
             OnImagesSelected?.Invoke();
@@ -109,7 +179,7 @@ public class GameManager : NetworkBehaviour
     private void OnCurrentImageIndexChanged(int oldValue, int newValue)
     {
         Debug.Log($"Current image changed from {oldValue} to {newValue}");
-        OnMaskChanged?.Invoke(newValue);
+        OnMaskChanged?.Invoke(oldValue, newValue);
     }
 
     private void OnClientConnected(ulong clientId)
@@ -126,13 +196,26 @@ public class GameManager : NetworkBehaviour
         Debug.Log($"Client host connected: {clientId}");
         if (GetPlayerCount() == 2)
         {
-            Debug.Log($"Client connected greater than 2: {clientId}");
             // Unsubscribe to prevent being called again
             NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
         
             SelectRandomImages();
+            DebugLogValidIds();
             StartGame();
         }
+    }
+    
+    public void DebugLogValidIds()
+    {
+        string debugString = "Current Valid Mask IDs: ";
+    
+        for (int i = 0; i < selectedImageIds.Count; i++)
+        {
+            // This prints the Index in the list vs the actual ID from the database
+            debugString += $"[List Index: {i} -> Mask ID: {selectedImageIds[i]}] ";
+        }
+
+        Debug.Log(debugString);
     }
 
     private void StartGame()
@@ -209,7 +292,6 @@ public class GameManager : NetworkBehaviour
             selectedImageIds.Add(selectedId);
             availableIndices.RemoveAt(randomIndex);
         }
-        
         currentImageIndex.Value = 0;
     }
     
@@ -286,7 +368,7 @@ public class GameManager : NetworkBehaviour
         return sprites;
     }
     
-    public Sprite GetCurrentSprite()
+    public Sprite GetCurrentMask()
     {
         if (selectedImageIds.Count == 0)
         {
@@ -346,12 +428,15 @@ public class GameManager : NetworkBehaviour
             
         for (int i = 0; i < npcCount; i++)
         {
-            NPCData npc = Instantiate(npcPrefab, new Vector3(i, 0, 0), Quaternion.identity).GetComponent<NPCData>();
+            // replcae vector with random points on navmesh surface
+            NPCData npc = Instantiate(npcPrefab, new Vector3(i + 1, 0, 0), Quaternion.identity).GetComponent<NPCData>();
             
             NetworkObject networkObject = npc.GetNetworkObject();
             networkObject.Spawn();
             
             npc.SetMsak(selectedImageIds[i]);
+            npc.SetNumber(i + 1);
+            npc.SetName(firstNames[Random.Range(0, firstNames.Length)] + " " + lastNames[Random.Range(0, lastNames.Length)]);
             generatedNPCs.Add(npc);
         }
     }

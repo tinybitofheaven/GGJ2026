@@ -18,7 +18,7 @@ public class PlayerData : NetworkBehaviour
     [SerializeField] private ThirdPersonController _playerMovement;
     [SerializeField] private CharacterController characterController;
     [SerializeField] private GameObject _playerModel;
-    
+    public PlayerGrab playerGrab;
     
     private StarterAssetsInputs _starterAssetsInputs;
     private PlayerInput _playerInput;
@@ -75,7 +75,6 @@ public class PlayerData : NetworkBehaviour
     
     private void OnRoleChanged(Role previousValue, Role newValue)
     {
-        Debug.Log($"Role changed from {previousValue} to {newValue} on {gameObject.name}");
         ApplyRole(newValue);
     }
     public void SetRole(Role role)
@@ -135,7 +134,6 @@ public class PlayerData : NetworkBehaviour
         disableMovement = value;
         if (disableMovement)
         {
-            Debug.Log("Disabled movement for: " + gameObject.name);
             characterController.enabled = false;
             _playerMovement.enabled = false;
             _playerModel.SetActive(false);

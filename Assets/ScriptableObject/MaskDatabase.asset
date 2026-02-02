@@ -14,17 +14,65 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   allImages:
   - id: 0
-    sprite: {fileID: 21300000, guid: c8329655b75596d419aced203f7555d7, type: 3}
-    imageName: mask1
+    sprite: {fileID: 21300000, guid: 4dff9435bc2190149957b1649bf6cc9b, type: 3}
+    imageName: 
   - id: 1
-    sprite: {fileID: 21300000, guid: 3829a02dcc2742e4c9c701cec2b0c33b, type: 3}
-    imageName: mask2
+    sprite: {fileID: 21300000, guid: cb2310d3b4d474b4ab787f1339d47bcb, type: 3}
+    imageName: 
   - id: 2
-    sprite: {fileID: 21300000, guid: b08c95d4fad4d2642b6b7cc73b0f54a7, type: 3}
-    imageName: mask3
+    sprite: {fileID: 21300000, guid: 6651aeaad9e56fc4fa66e67d45d9dbf0, type: 3}
+    imageName: 
   - id: 3
-    sprite: {fileID: 21300000, guid: 1e9610bda6f0f604989539083f33c930, type: 3}
-    imageName: mask4
+    sprite: {fileID: 21300000, guid: 0f6f5b6751addcd448c7ab9c729863ae, type: 3}
+    imageName: 
   - id: 4
-    sprite: {fileID: 21300000, guid: 40c623a080594214d8ae3c6878a502f7, type: 3}
-    imageName: mask5
+    sprite: {fileID: 21300000, guid: 3fccf6cc1e3666349a11708025d2b916, type: 3}
+    imageName: 
+  - id: 5
+    sprite: {fileID: 21300000, guid: 9a3a9bd66c576184f95ec56eebe358a1, type: 3}
+    imageName: 
+  - id: 6
+    sprite: {fileID: 21300000, guid: a684d52e7f5f36c40899b83bb91248e5, type: 3}
+    imageName: 
+  - id: 7
+    sprite: {fileID: 21300000, guid: 4eacf28624921e244b12fd0f95256d0d, type: 3}
+    imageName: 
+  - id: 8
+    sprite: {fileID: 21300000, guid: d246fb1086b650a4ab8ae2b8142e3114, type: 3}
+    imageName: 
+  - id: 9
+    sprite: {fileID: 21300000, guid: 74dceee8c657b484ba4995074d27e98a, type: 3}
+    imageName: 
+  - id: 10
+    sprite: {fileID: 21300000, guid: fb489e862e346de4ca96b152fe258e1c, type: 3}
+    imageName: 
+  - id: 11
+    sprite: {fileID: 21300000, guid: 2474a13c16ebee645bb8204031e9ffb4, type: 3}
+    imageName: 
+  - id: 12
+    sprite: {fileID: 21300000, guid: 84d5a18bcb4f5074c9fd1f6e9a5fbb50, type: 3}
+    imageName: 
+  - id: 13
+    sprite: {fileID: 21300000, guid: ca8a7346a2317d146b26280c71a195ca, type: 3}
+    imageName: 
+  - id: 14
+    sprite: {fileID: 21300000, guid: 2667cfb1d27251343a317693687b8f68, type: 3}
+    imageName: 
+  - id: 15
+    sprite: {fileID: 21300000, guid: b62e96c12b39abb4eb33ba33479da170, type: 3}
+    imageName: 
+  - id: 16
+    sprite: {fileID: 21300000, guid: 3917de5d79b33474cb9e7dc6c8cc9fe5, type: 3}
+    imageName: 
+  - id: 17
+    sprite: {fileID: 21300000, guid: 23ba8a50944ee5c4b911fc52691b0df7, type: 3}
+    imageName: 
+  - id: 18
+    sprite: {fileID: 21300000, guid: 826afe441e315dc46a0e0098b2744871, type: 3}
+    imageName: 
+  - id: 19
+    sprite: {fileID: 21300000, guid: 951a6fc02cea022408620816299a4708, type: 3}
+    imageName: 
+  - id: 20
+    sprite: {fileID: 21300000, guid: 367ecb625720b214fa413aa35db5f9ec, type: 3}
+    imageName: 

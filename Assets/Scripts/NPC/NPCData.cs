@@ -1,3 +1,4 @@
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -8,6 +9,8 @@ public class NPCData : NetworkBehaviour
     [SerializeField] private SpriteRenderer maskSpriteRenderer;
     [SerializeField] private NetworkObject networkObject;
 
+    private NetworkVariable<FixedString32Bytes> npcName = new NetworkVariable<FixedString32Bytes>("John Smith");
+    private NetworkVariable<int> npcNumber = new NetworkVariable<int>(0);
     private NetworkVariable<int> maskId = new NetworkVariable<int>();
     
     public void SetMsak(int id)
@@ -18,6 +21,31 @@ public class NPCData : NetworkBehaviour
         }
         
         ApplyMask(maskId.Value);
+    }
+    
+    public void SetNumber(int num)
+    {
+        if (IsServer)
+        {
+            npcNumber.Value = num;
+        }
+    }
+    
+    public void SetName(string n)
+    {
+        if (IsServer)
+        {
+            npcName.Value = n;
+        }
+    }
+
+    public int GetNumber() { return npcNumber.Value; }
+    
+    public int GetMaskId() { return maskId.Value; }
+    
+    public FixedString32Bytes GetName()
+    {
+        return npcName.Value;
     }
     
     public override void OnNetworkSpawn()
@@ -46,6 +74,23 @@ public class NPCData : NetworkBehaviour
 
     private void ApplyMask(int id)
     {
+        Debug.Log($"{networkObject.name} applying mask, image: {maskId.Value}");
         maskSpriteRenderer.sprite = GameManager.Instance.MaskDatabase.GetSpriteById(id);
+    }
+    
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!IsOwner) return;
+
+        if (other.CompareTag("EjectZone"))
+        {
+            RequestDestructionServerRpc();
+        }
+    }
+    
+    [ServerRpc]
+    private void RequestDestructionServerRpc()
+    {
+        GameManager.Instance.EvictNPC(this);
     }
 }
